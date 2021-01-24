@@ -8,6 +8,7 @@
 	use Symfony\Component\HttpFoundation\Response;
 	use Symfony\Component\Routing\Annotation\Route;
 	use Symfony\Component\HttpClient\HttpClient;
+	use App\Analyzer\SellersJsonSimpleAnalyzer;
 	
 	
 	class SellerApiController extends AbstractController
@@ -25,12 +26,15 @@
 			if($response->getStatusCode()!=200){
 				return $this->teaTime();
 			}
-			try {
-				$sellers = json_decode($response->getContent())->sellers;
-			} 
-			catch (\Exception $e) {
+			
+			$analyzer = new SellersJsonSimpleAnalyzer();
+			$analysisResult = $analyzer->analyze($response->getContent());
+			if(!$analysisResult->getIsValid()){
 				return $this->teaTime();
 			}
+			
+			$sellers = $analysisResult->getSellers();
+			
 			foreach ($sellers as $cur){
 				$seller = new Seller($cur->name, $cur->seller_id, $cur->seller_type);
 				if(isset($cur->comment)) {
